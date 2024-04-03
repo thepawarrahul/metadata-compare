@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navigation Menu</title>
+<style>
+    /* Add your CSS styles here */
+    .nav-menu {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .nav-menu li {
+      margin-bottom: 5px;
+      cursor: pointer; /* Add pointer cursor to indicate clickable */
+    }
+    #fileComparisonContainer {
+      display: flex;
+      justify-content: space-between;
+    }
+    .fileContainer {
+      width: 45%;
+      position: relative; /* Add position relative to handle absolute positioning */
+    }
+    .fileContent {
+      width: 100%;
+      height: 200px; /* Adjust height as needed */
+      padding: 5px;
+      border: 1px solid #ccc;
+      font-family: monospace; /* Ensures consistent character width */
+      white-space: pre-wrap;
+      overflow-y: scroll;
+    }
+    .removed {
+      color: red;
+    }
+    .added {
+      color: green;
+    }
+</style>
+</head>
+<body>
+  <ul class="nav-menu" id="navMenu">
+    <!-- File names will be inserted here -->
+  </ul>
+  <div id="fileComparisonContainer">
+    <div class="fileContainer">
+      <h2>File 1</h2>
+      <div id="fileContent1" class="fileContent" readonly></div>
+    </div>
+  </div>
+
+<script>
+
+// Function to fetch file content
+async function fetchFileContent(fileName) {
+  try {
+    const response = await fetch(`http://localhost:4000/compareFile?dirname=profiles&filename=${fileName}`);
+    const data = await response.text();
+    return data;
+  } catch (error) {
+    console.error('Error fetching file content:', error);
+    return null;
+  }
+}
+
+// Fetch data from the API endpoint
+fetch('http://localhost:4000/getFileNames')
+  .then(response => response.json())
+  .then(data => {
+    // Get the ul element
+    const navMenu = document.getElementById('navMenu');
+
+    // Clear any existing list items
+    navMenu.innerHTML = '';
+
+    // Extract file names from the response
+    const files = data.files;
+
+    // Loop through the file names and create list items
+    files.forEach(fileName => {
+      const li = document.createElement('li');
+      li.textContent = fileName;
+      li.addEventListener('click', async () => {
+        const fileContent = await fetchFileContent(fileName);
+        console.log('fileContent : ' + fileContent);
+        if (fileContent) {
+          document.getElementById('fileContent1').innerHTML = fileContent;
+          applyColorFormatting();
+        } else {
+          document.getElementById('fileContent1').textContent = 'Error fetching file content';
+        }
+      });
+      navMenu.appendChild(li);
+    });
+  })
+  .catch(error => {
+    console.error('Error fetching file names:', error);
+  });
+
+function applyColorFormatting() {
+  const fileContentDiv = document.getElementById('fileContent1');
+  const spans = fileContentDiv.querySelectorAll('span');
+  spans.forEach(span => {
+    if (span.classList.contains('removed')) {
+      span.style.color = 'red';
+    } else if (span.classList.contains('added')) {
+      span.style.color = 'green';
+    }
+  });
+}
+
+</script>
+</body>
+</html>
